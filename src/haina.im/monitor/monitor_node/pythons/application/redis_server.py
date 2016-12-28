@@ -1,6 +1,6 @@
 import time
 import sys
-sys.path.append(r'monitor/local/pythons/tools')
+sys.path.append(r'haina.im/monitor/monitor_node/pythons/tools')
 import tool
 
 def redisProcess(hcmd, cmd):

@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Applications>
+
+	<Application Name='mysqld'>
+			<Record Name='process' Provide='mysqld.py' Timespan='30'>
+				<paras>'p1 p2'</paras>
+			</Record>
+
+			<Record Name='configFile' Provide='config.py' Timespan='120'>
+				<paras>'p1 p2'</paras>
+			</Record>
+	</Application>
+
+	<Application Name='redis-server'>
+			<Record Name='process' Provide='redis_server.py' Timespan='30'>
+				<paras>'p1 p2'</paras>
+			</Record>
+
+			<Record Name='configFile' Provide='config.py' Timespan='120'>
+				<paras>'p1 p2'</paras>
+			</Record>
+	</Application>
+
+<!-- 	<Application AppName='xulang' PyName='xulang.py'>
+			<Record Name='process' Describe='redis-server task'/>
+
+			<Record Name='configFile' Describe='redis-server config file'/>
+	</Application> -->
+
+</Applications>
+
+<System>
+	<Node Name='bj-127.0.0.1-development'>
+		<Record Cpu=''/>
+		<Record Task=''/>
+		<Record Mem=''/>
+	</Node>
+</System>

@@ -2,12 +2,12 @@ package utils
 
 import (
 	"encoding/xml"
-	"io/ioutil"
-	"monitor/local/share"
 	l4g "github.com/alecthomas/log4go"
+	"haina.im/monitor/monitor_node/share"
+	"io/ioutil"
 )
 
-/** 
+/**
 	enconding/xml:
 	func Marshal(v interface{}) ([]byte, error)
  	func Unmarshal(data []byte, v interface{}) error
@@ -24,18 +24,18 @@ const (
 
 type ParseResult struct {
 	//Version  string         `xml:"Version,attr"`
-	Application []Application	`xml:"Application"`
+	Application []Application `xml:"Application"`
 }
 
 type Application struct {
-	Record 		[]Record  	`xml:"Record"`
-	AppName		string		`xml:"AppName,attr"`
-	PyName		string		`xml:"PyName,attr"`
+	Record  []Record `xml:"Record"`
+	AppName string   `xml:"AppName,attr"`
+	PyName  string   `xml:"PyName,attr"`
 }
 type Record struct {
 	//Command		[]Command	`xml:"Command"`
-	Name			string		`xml:"Name,attr"`
-	Describe		string		`xml:"Caption,attr"`
+	Name     string `xml:"Name,attr"`
+	Describe string `xml:"Caption,attr"`
 }
 
 func ParseXml(path string) (ParseResult, error) {
@@ -61,13 +61,13 @@ func GetAppsByConfigfile(path string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var ss		[]string
-	var n		int
-	var apps 	Application
+	var ss []string
+	var n int
+	var apps Application
 	for n, apps = range str.Application {
 		ss = append(ss, apps.PyName)
 	}
 
-	l4g.Info("application total: %d,  that respectively are: %s\n",n+1, ss)
+	l4g.Info("application total: %d,  that respectively are: %s\n", n+1, ss)
 	return ss, nil
 }
