@@ -14,6 +14,8 @@ def mysqldProcess(hcmd, cmd):
 	
 	#return ("{0},{1}".format(str(data),id(redis)))
 
-print(mysqldProcess('ps -aux |head -1', 'ps -aux | grep mysqld'))
-#print(sys.argv[1])
+ss = sys.argv[1].split(',')
+print(mysqldProcess(ss[0], ss[1]))
+#print(ss[0])
+#print(ss[1])
 #print(sys.argv[2])

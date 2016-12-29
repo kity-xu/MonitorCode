@@ -5,6 +5,7 @@ import (
 	l4g "github.com/alecthomas/log4go"
 	"haina.im/monitor/monitor_node/share"
 	"io/ioutil"
+	"strings"
 )
 
 /**
@@ -22,24 +23,46 @@ const (
 	path_appconfig = share.GO_CONFIGS_APP
 )
 
-type ParseResult struct {
-	//Version  string         `xml:"Version,attr"`
+type Monitornode struct {
+	Applications Applications `xml:"Applications"`
+	System       System       `xml:"System"`
+}
+type System struct {
+	Node []Node `xml:"Node"`
+}
+type Node struct {
+	Name     string `xml:"Name,attr"`
+	Timespan string `xml:"Timespan,attr"`
+	Cpu      string `xml:"Cpu"`
+	Task     string `xml:"Task"`
+	Mem      string `xml:"Mem"`
+}
+
+type Applications struct {
 	Application []Application `xml:"Application"`
 }
 
 type Application struct {
-	Record  []Record `xml:"Record"`
-	AppName string   `xml:"AppName,attr"`
-	PyName  string   `xml:"PyName,attr"`
+	Record []Record `xml:"Record"`
+	Name   string   `xml:"Name,attr"`
 }
 type Record struct {
 	//Command		[]Command	`xml:"Command"`
 	Name     string `xml:"Name,attr"`
-	Describe string `xml:"Caption,attr"`
+	Provide  string `xml:"Provide,attr"`
+	Timespan string `xml:"Timespan,attr"`
+	Paras    string `xml:"Paras"`
 }
 
-func ParseXml(path string) (ParseResult, error) {
-	var result ParseResult
+type RecordInfo struct {
+	Name     string
+	Provide  string
+	Timespan string
+	Paras    string
+}
+
+func ParseXml(path string) (*Monitornode, error) {
+	var result *Monitornode
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
 		l4g.Error(err)
@@ -56,18 +79,75 @@ func ParseXml(path string) (ParseResult, error) {
 	return result, nil
 }
 
-func GetAppsByConfigfile(path string) ([]string, error) {
-	str, err := ParseXml(path)
-	if err != nil {
-		return nil, err
-	}
-	var ss []string
+/**	@funcName：	GetAppsByConfig
+*	@function:	获取配置文件所有应用(Application)结构
+*	@parameter:	Monitornode
+*	@return:	应用结构的集合[]Application
+**/
+func GetAppsByConfig(node *Monitornode) []Application {
+	var ss []Application
 	var n int
 	var apps Application
-	for n, apps = range str.Application {
-		ss = append(ss, apps.PyName)
+	for n, apps = range node.Applications.Application {
+		ss = append(ss, apps)
 	}
 
 	l4g.Info("application total: %d,  that respectively are: %s\n", n+1, ss)
-	return ss, nil
+	return ss
+}
+
+/**	@funcName：	GetPythonsByConfig
+*	@function:	获取配置文件所有python脚本名
+*	@parameter:	Monitornode
+*	@return:	脚本的集合
+**/
+func GetPythonsByConfig(node *Monitornode) []string {
+	var ss []string
+	var apps Application
+	var record Record
+	for _, apps = range node.Applications.Application {
+		//ss = append(ss, apps.Record.Provide)
+		for _, record = range apps.Record {
+			ss = append(ss, record.Provide)
+		}
+	}
+	return ss
+}
+
+/**	@funcName：	GetRecordByName
+*	@function:	根据Record name获取对应信息
+*	@parameter:	1：Application		2：recName
+*	@return:	RecordInfo
+**/
+func GetRecordByName(node *Application, recname string) RecordInfo {
+	var info RecordInfo
+	var rec Record
+	for _, rec = range node.Record {
+		if strings.EqualFold(rec.Name, recname) {
+			info.Name = rec.Name
+			info.Provide = rec.Provide
+			info.Timespan = rec.Timespan
+			info.Paras = rec.Paras
+		}
+	}
+	return info
+}
+
+/**	@funcName：	GetRecordByProvide
+*	@function:	根据provideu获取对应的record
+*	@parameter:	1：Monitornode		2：provide
+*	@return:	RecordInfo
+**/
+func GetRecordByProvide(node *Application, provide string) RecordInfo {
+	var info RecordInfo
+	var rec Record
+	for _, rec = range node.Record {
+		if strings.EqualFold(rec.Provide, provide) {
+			info.Name = rec.Name
+			info.Provide = rec.Provide
+			info.Timespan = rec.Timespan
+			info.Paras = rec.Paras
+		}
+	}
+	return info
 }
