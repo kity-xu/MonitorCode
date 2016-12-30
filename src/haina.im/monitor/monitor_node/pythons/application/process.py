@@ -9,7 +9,9 @@ def mysqldProcess(hcmd, cmd):
 	info = tool.getInfo(cmd)
 	
 	for i in range(len(head)):
-		data[head[i]] = info[i]
+		key = head[i]
+		if key == 'USER' or key == '%CPU' or key == "%MEM" or key == 'PID' or key == 'RSS':
+			data[key] = info[i]
 	return (str(data))
 	
 	#return ("{0},{1}".format(str(data),id(redis)))

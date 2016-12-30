@@ -11,22 +11,25 @@ def get_some():
 		return 
 
 def getTasks(info):
-	return info
+	ss = info.split(':')
+	return 'Tasks::' + ss[1]
 
 def getCpu(info):
 	ss = info.split(':')
-	return 'Cpu(%):' + ss[1]
+	return 'Cpu::' + ss[1]
 	
 def getMem(info):
 	ss = info.split(':')
-	return 'Mem(k):' + ss[1]
+	return 'Mem::' + ss[1]
 
 def getSwap(info):
-	return 'Swap(k):' + ss[1]
+	ss = info.split(':')
+	return 'Swap::' + ss[1]
 
 
 info = get_some()
 
+#print(info)
 print(getTasks(info[1]))
 print(getCpu(info[2]))
 print(getMem(info[3]))

@@ -1,45 +1,47 @@
 #!usr/bin python3
-# coding: utf-8
+# -*- coding:utf-8 -*-
 import subprocess
 
-def get_osystem(self):
+def get_osystem():
 	try:
 		o = subprocess.check_output('uname -o', shell=True).decode()
-		return o
+		return 'Osystem::' + o
 	except CalledProcessError:
 		return ''
 
-def get_user(self):
+def get_user():
 	try:
 		u = subprocess.check_output('uname -n', shell=True).decode()
-		return u
+		return 'User::' + u
 	except CalledProcessError:
 		return -1
 
-def get_ip(self):
+def get_ip():
 	try:
 		u = subprocess.check_output("ifconfig ens33 | grep 'inet addr' | awk '{print $2}' | awk -F: '{print $2}'", shell=True).decode()
-		return u
+		return 'IP::' + u
 	except CalledProcessError:
 		return -1
 
-def get_version(self):
+def get_version():
 	try:
 		u = subprocess.check_output('uname -v', shell=True).decode()
-		return u
+		return 'Version::' + u
 	except CalledProcessError:
 		return -1
 
-def get_platform(self):
+def get_platform():
 	try:
 		u = subprocess.check_output('uname -i', shell=True).decode()
-		return u
+		return 'Platform::' + u
 	except CalledProcessError:
 		return -1
 
-def get_all(self):
+def get_all():
 	try:
 		u = subprocess.check_output('uname -a', shell=True).decode()
-		return u
+		return 'All::' + u
 	except CalledProcessError:
 		return -1
+
+print(get_all() + get_osystem() + get_user() + get_ip() + get_version() + get_platform())

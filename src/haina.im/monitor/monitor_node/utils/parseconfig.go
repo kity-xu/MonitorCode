@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/xml"
+	"errors"
 	l4g "github.com/alecthomas/log4go"
 	"haina.im/monitor/monitor_node/share"
 	"io/ioutil"
@@ -19,10 +20,6 @@ import (
 
 **/
 
-const (
-	path_appconfig = share.GO_CONFIGS_APP
-)
-
 type Monitornode struct {
 	Applications Applications `xml:"Applications"`
 	System       System       `xml:"System"`
@@ -39,6 +36,7 @@ type Node struct {
 }
 
 type Applications struct {
+	Timespan    int           `xml:"Timespan,attr"`
 	Application []Application `xml:"Application"`
 }
 
@@ -84,16 +82,15 @@ func ParseXml(path string) (*Monitornode, error) {
 *	@parameter:	Monitornode
 *	@return:	应用结构的集合[]Application
 **/
-func GetAppsByConfig(node *Monitornode) []Application {
+func GetAppsByConfig(node *Monitornode) Applications {
+	var res Applications
 	var ss []Application
-	var n int
-	var apps Application
-	for n, apps = range node.Applications.Application {
-		ss = append(ss, apps)
+	for _, app := range node.Applications.Application {
+		ss = append(ss, app)
 	}
-
-	l4g.Info("application total: %d,  that respectively are: %s\n", n+1, ss)
-	return ss
+	res.Application = ss
+	//l4g.Info("application total: %d,  that respectively are: %v\n", n+1, res)
+	return res
 }
 
 /**	@funcName：	GetPythonsByConfig
@@ -150,4 +147,47 @@ func GetRecordByProvide(node *Application, provide string) RecordInfo {
 		}
 	}
 	return info
+}
+
+/**	@funcName:	checkPythonScripts
+*	@function：	核实配置脚本
+*	@parameter:	解析的配置文件结构Monitornode
+*	@return :	py脚本名，nil（或是出错脚本，ee）
+**/
+func CheckPythonScripts(node *Monitornode) ([]string, error) {
+	ee := errors.New("Unable to identify the script file")
+	ds, err := GetAppsBywalkdir(share.PY_DIRPATH_APP, "py") //遍历python/application 目录，查看已有的脚本
+	if err != nil {
+		return nil, err
+	}
+	//l4g.Debug(ds)
+
+	cs := GetPythonsByConfig(node) //读取配置文件查看已有的脚本
+	//l4g.Debug(cs)
+
+	var apps []string
+	var noexit []string
+
+	var iTag bool
+	for _, v := range cs {
+		iTag = false
+		for _, v2 := range ds {
+			if strings.EqualFold(v, v2) {
+				apps = append(apps, v)
+				iTag = true
+				break
+			} else {
+				continue
+			}
+		}
+
+		if !iTag { //意味着配置文件中有的本地不存在
+			noexit = append(noexit, v)
+		}
+	}
+	if !iTag {
+		return noexit, ee
+	}
+	l4g.Info("apps :", apps)
+	return apps, nil
 }

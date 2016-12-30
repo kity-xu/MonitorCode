@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <Monitornode>
-	<Applications>
+	<Applications Timespan='5'>
 
 		<Application Name='mysqld'>
 				<Record Name='process' Provide='process.py' Timespan='3'>
@@ -13,7 +13,7 @@
 		</Application>
 
 		<Application Name='redis-server'>
-				<Record Name='process' Provide='process.py' Timespan='3'>
+				<Record Name='process1' Provide='process.py' Timespan='3'>
 					<Paras>ps -aux |head -1,ps -aux | grep redis-server</Paras>
 				</Record>
 
