@@ -24,7 +24,7 @@ func Decode(data []byte, to interface{}) error {
 	return dec.Decode(to)
 }
 
-func WebsocketClient(cc chan ResultData) {
+func WebsocketClient(cc chan MonitorData) {
 	//var origin = "http://xiaodong.xiaodong.im/"
 	var url = "ws://192.168.2.79:5010/socket"
 	c := evtwebsocket.Conn{

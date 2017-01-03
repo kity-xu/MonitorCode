@@ -4,7 +4,7 @@
 
 		<Application Name='mysqld'>
 				<Record Name='process' Provide='process.py' Timespan='3'>
-					<Paras>ps -aux |head -1,ps -aux | grep mysqld</Paras>
+					<Paras>mysqld</Paras>
 				</Record>
 
 				<!-- <Record Name='configFile' Provide='config.py' Timespan='120'>
@@ -14,7 +14,7 @@
 
 		<Application Name='redis-server'>
 				<Record Name='process1' Provide='process.py' Timespan='3'>
-					<Paras>ps -aux |head -1,ps -aux | grep redis-server</Paras>
+					<Paras>redis-server</Paras>
 				</Record>
 
 				<!-- <Record Name='configFile' Provide='xulang.py' Timespan='120'>

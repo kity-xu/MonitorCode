@@ -26,7 +26,7 @@ func shellCommand(name, paras string) string {
 		//l4g.Info("---------%s:", string(out)) //out return value of call *.py
 		return string(out)
 	} else {
-		l4g.Debug("running shellCommand error ....")
+		l4g.Debug("错误码:%d, 脚本：%s", share.PY_CALL_ERROR, share.PY_DIRPATH_APP+name)
 		return ""
 	}
 }
@@ -42,7 +42,7 @@ func (this *MonitorCode) startScript(rec utils.Record) ResultRec {
 	//for {
 	info := shellCommand(rec.Provide, rec.Paras)
 	if strings.EqualFold(info, "") {
-		l4g.Debug("shellCommand return value is null...")
+		l4g.Debug("错误码：%d, 脚本：%s", share.PY_RETURN_NONE, rec.Provide)
 		//return
 	}
 	//l4g.Debug("最终的数据:%s", info) //最终的数据
@@ -103,7 +103,7 @@ func (this *MonitorCode) startExplorer() Explorer {
 			}
 		}
 	} else {
-		l4g.Debug(" start system failed...")
+		l4g.Debug("错误码：%d", share.START_EXP_ERROR)
 	}
 	return exp
 }
@@ -138,7 +138,7 @@ func (this *MonitorCode) startOsystem() Osystem {
 			}
 		}
 	} else {
-		l4g.Debug(" start system failed...")
+		l4g.Debug("错误码：%d", share.START_SYS_ERROR)
 	}
 	return sys
 }
@@ -146,13 +146,13 @@ func (this *MonitorCode) startOsystem() Osystem {
 /**	@funcName:	Collection
 *	@function：	数据采集
 *	@parameter:	解析的配置文件结构Monitornode
-*	@return :	ResultData
+*	@return :	MonitorData
 **/
-func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan ResultData) {
+func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan MonitorData) {
 	apps := utils.GetAppsByConfig(node)
 
 	for {
-		var res ResultData
+		var res MonitorData
 		var afs []ResultApp
 		for _, app := range apps.Application {
 			//开启单个应用
@@ -163,6 +163,7 @@ func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan ResultData)
 		res.Exp = this.startExplorer()
 		res.Osys = this.startOsystem()
 		res.Apps = afs
+		res.Time = time.Now().Format("2006-01-02 15:04:05")
 		cc <- res
 
 		time.Sleep(time.Duration(apps.Timespan) * time.Second)
@@ -177,17 +178,20 @@ func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan ResultData)
 func (this *MonitorCode) StartMonitor() {
 	node, err := utils.ParseXml(share.GO_CONFIG_FILE)
 	if err != nil {
-		return //parse config.xml error
+		l4g.Debug("错误码：%d", share.PY_PARSE_ERRROR)
+		return
 	}
 	scripts, err := utils.CheckPythonScripts(node) //apps 是可执行的脚本名或是不可执行的脚本名Provide
 	if err != nil {                                //一般函数调用错误
 		if scripts != nil { //意味着配置文件中有的本地不存在
-			l4g.Debug("%v：%v", err, scripts) //把本地不存在的脚本名返回
+			l4g.Debug("错误码：%s， 其他信息： %v：%v", share.PY_NOT_EXIST, err, scripts) //把本地不存在的脚本名返回
+			return
 		}
-		//return
+		l4g.Debug("错误码：%d", share.PY_WALKDIR_ERROR)
+		return
 	}
 
-	cc := make(chan ResultData)
+	cc := make(chan MonitorData)
 
 	go this.Collection(node, cc)
 

@@ -25,8 +25,9 @@ type Osystem struct {
 	Platform string
 }
 
-type ResultData struct {
+type MonitorData struct {
 	Apps []ResultApp
 	Exp  Explorer
 	Osys Osystem
+	Time string
 }
