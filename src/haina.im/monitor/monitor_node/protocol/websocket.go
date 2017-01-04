@@ -5,21 +5,70 @@ import (
 	"encoding/gob"
 	l4g "github.com/alecthomas/log4go"
 	"github.com/rgamba/evtwebsocket"
-	"time"
 )
 
-func Encode(data interface{}) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
-	enc := gob.NewEncoder(buf)
-	err := enc.Encode(data)
+type Applications struct {
+	As []ResultApp
+}
+
+type Data struct {
+	Apps interface{}
+	Exp  interface{}
+	Osys interface{}
+	Time string
+}
+
+type Res struct {
+	Apps interface{}
+	Exp  interface{}
+	Osys interface{}
+	Time string
+}
+
+func Encode(da MonitorData) ([]byte, error) {
+	var buf bytes.Buffer        // Stand-in for a network connection
+	enc := gob.NewEncoder(&buf) // Will write to network.
+
+	gob.Register(Applications{})
+	gob.Register(Explorer{})
+	gob.Register(Osystem{})
+
+	apps := Applications{da.Apps}
+	last := Data{apps, da.Exp, da.Osys, da.Time}
+
+	err := enc.Encode(last)
 	if err != nil {
 		return nil, err
 	}
+
+	// dec := gob.NewDecoder(&buf)
+	// var res Res
+	// e := dec.Decode(&res)
+	// if e != nil {
+	// 	l4g.Debug("序列化失败:%s", err)
+	// }
+	// l4g.Debug("Decode-----", res)
+
 	return buf.Bytes(), nil
 }
 
+// func Encode(data interface{}) ([]byte, error) {
+// 	buf := bytes.NewBuffer(nil)
+// 	enc := gob.NewEncoder(buf)
+// 	err := enc.Encode(data)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return buf.Bytes(), nil
+// }
+
 func Decode(data []byte, to interface{}) error {
 	buf := bytes.NewBuffer(data)
+
+	// gob.Register(Applications{})
+	// gob.Register(Explorer{})
+	// gob.Register(Osystem{})
+
 	dec := gob.NewDecoder(buf)
 	return dec.Decode(to)
 }
@@ -36,7 +85,7 @@ func WebsocketClient(cc chan MonitorData) {
 
 		// When a message arrives
 		OnMessage: func(msg []byte, w *evtwebsocket.Conn) {
-			l4g.Debug("OnMessage: %s\n", msg)
+			//l4g.Debug("OnMessage: %s\n", msg)
 		},
 
 		// When the client disconnects for any reason
@@ -70,6 +119,19 @@ func WebsocketClient(cc chan MonitorData) {
 	if err != nil {
 		l4g.Error("序列化失败:%s", err)
 	}
+
+	l4g.Debug("---websocket中最终的数据：", context)
+
+	var R Res
+	// buf := bytes.NewBuffer(context)
+	// dec := gob.NewDecoder(buf)
+
+	e2 := Decode(context, &R)
+	if e2 != nil {
+		l4g.Error("序列化失败:%s", e2)
+	}
+	l4g.Debug("---Result:", R)
+
 	msg := evtwebsocket.Msg{
 		Body: context,
 		Callback: func(resp []byte, w *evtwebsocket.Conn) {
@@ -77,7 +139,7 @@ func WebsocketClient(cc chan MonitorData) {
 		},
 	}
 
-	l4g.Debug("Sending message: %s\n", msg.Body)
+	//l4g.Debug("Sending message: %s\n", msg.Body)
 
 	// Send the message to the server
 	if err := c.Send(msg); err != nil {
@@ -85,5 +147,5 @@ func WebsocketClient(cc chan MonitorData) {
 	}
 
 	// Take a break
-	time.Sleep(time.Second * 3)
+	//time.Sleep(time.Second * 3)
 }

@@ -197,7 +197,7 @@ func (this *MonitorCode) StartMonitor() {
 
 	for {
 		l4g.Info("********************DATA*******************%v", <-cc)
-		//WebsocketClient(cc)
+		WebsocketClient(cc)
 		time.Sleep(time.Duration(5) * time.Second)
 		l4g.Info("--------")
 	}
