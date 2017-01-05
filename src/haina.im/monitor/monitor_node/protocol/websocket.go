@@ -3,6 +3,7 @@ package protocol
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	l4g "github.com/alecthomas/log4go"
 	"github.com/rgamba/evtwebsocket"
 )
@@ -73,7 +74,7 @@ func Decode(data []byte, to interface{}) error {
 	return dec.Decode(to)
 }
 
-func WebsocketClient(cc chan MonitorData) {
+func WebsocketClient(cc MonitorData) {
 	//var origin = "http://xiaodong.xiaodong.im/"
 	var url = "ws://192.168.2.79:5010/socket"
 	c := evtwebsocket.Conn{
@@ -113,24 +114,26 @@ func WebsocketClient(cc chan MonitorData) {
 		l4g.Error(err)
 	}
 
-	// Create the message with a callback
-	//context := "[\"pusher:subscribe\", {\"auth\":\"\", \"channel\":\"channel1\"}]"
-	context, err := Encode(<-cc)
+	context, err := json.Marshal(cc)
 	if err != nil {
-		l4g.Error("序列化失败:%s", err)
+		l4g.Error(err)
 	}
+	// context, err := Encode(cc)
+	// if err != nil {
+	// 	l4g.Error("序列化失败:%s", err)
+	// }
 
-	l4g.Debug("---websocket中最终的数据：", context)
+	// l4g.Debug("---websocket中最终的数据：", context)
 
-	var R Res
-	// buf := bytes.NewBuffer(context)
-	// dec := gob.NewDecoder(buf)
+	// var R Res
+	// // buf := bytes.NewBuffer(context)
+	// // dec := gob.NewDecoder(buf)
 
-	e2 := Decode(context, &R)
-	if e2 != nil {
-		l4g.Error("序列化失败:%s", e2)
-	}
-	l4g.Debug("---Result:", R)
+	// e2 := Decode(context, &R)
+	// if e2 != nil {
+	// 	l4g.Error("序列化失败:%s", e2)
+	// }
+	// l4g.Debug("---Result:", R)
 
 	msg := evtwebsocket.Msg{
 		Body: context,
@@ -139,7 +142,7 @@ func WebsocketClient(cc chan MonitorData) {
 		},
 	}
 
-	//l4g.Debug("Sending message: %s\n", msg.Body)
+	//l4g.Debug("Sending message: %v\n", msg)
 
 	// Send the message to the server
 	if err := c.Send(msg); err != nil {

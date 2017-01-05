@@ -191,14 +191,14 @@ func (this *MonitorCode) StartMonitor() {
 		return
 	}
 
-	cc := make(chan MonitorData)
+	cc := make(chan MonitorData, 1)
 
 	go this.Collection(node, cc)
 
-	for {
-		l4g.Info("********************DATA*******************%v", <-cc)
-		WebsocketClient(cc)
-		time.Sleep(time.Duration(5) * time.Second)
-		l4g.Info("--------")
-	}
+	//for {
+	//l4g.Info("********************DATA*******************%v", <-cc)
+	WebsocketClient(<-cc)
+	//time.Sleep(time.Duration(5) * time.Second)
+	//l4g.Info("----jsons:%v", jsons)
+	//}
 }
