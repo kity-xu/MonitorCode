@@ -9,4 +9,7 @@ const (
 
 	START_SYS_ERROR = 20001 //启动Osystem错误
 	START_EXP_ERROR = 20002 //启动Explorer错误
+
+	//websocket disconnected
+	WEBSOCKET_DISCONNECTED = 30001 // 连接断开
 )

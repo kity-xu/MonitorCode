@@ -1,12 +1,12 @@
 package protocol
 
 import (
-	//"errors"
+	"encoding/json"
+	"fmt"
 	l4g "github.com/alecthomas/log4go"
 	"haina.im/monitor/monitor_node/share"
 	"haina.im/monitor/monitor_node/utils"
 	"os/exec"
-	//"strconv"
 	"strings"
 	"time"
 )
@@ -14,19 +14,40 @@ import (
 type MonitorCode struct {
 }
 
+/**	@funcName：	writeTube
+*	@function:	错误返回
+*	@parameter:	错误码
+*	@return:	错误数据
+**/
+func writeTube(c ...interface{}) []byte {
+	if len(c) == 3 {
+		s := fmt.Sprintln("错误码：", c[0], "其他信息：", c[1], c[2])
+		return []byte(s)
+	}
+	if len(c) == 2 {
+		s := fmt.Sprintln("错误码：", c[0], "脚本：", c[1])
+		return []byte(s)
+	}
+	if len(c) == 1 {
+		s := fmt.Sprintln("错误码：", c[0])
+		return []byte(s)
+	}
+	return nil
+}
+
 /**	@funcName：	shellCommand
 *	@function:	启动单个脚本
 *	@parameter:	脚本名
 *	@return:	脚本输出数据
 **/
-func shellCommand(name, paras string) string {
+func shellCommand(name, paras string, soc *SocketClient) string {
 	//l4g.Info("~~~~~~~~~~~~~~~~~paras:%s", paras)
 	cmd := exec.Command("python", share.PY_DIRPATH_APP+name, paras)
 	if out, err := cmd.CombinedOutput(); err == nil {
 		//l4g.Info("---------%s:", string(out)) //out return value of call *.py
 		return string(out)
 	} else {
-		l4g.Debug("错误码:%d, 脚本：%s", share.PY_CALL_ERROR, share.PY_DIRPATH_APP+name)
+		soc.Send(writeTube(share.PY_CALL_ERROR, share.PY_DIRPATH_APP+name))
 		return ""
 	}
 }
@@ -36,20 +57,13 @@ func shellCommand(name, paras string) string {
 *	@parameter:	record appName
 *	@return:	none
 **/
-func (this *MonitorCode) startScript(rec utils.Record) ResultRec {
+func (this *MonitorCode) startScript(rec utils.Record, soc *SocketClient) ResultRec {
 	var r ResultRec
-	//t, _ := strconv.Atoi(rec.Timespan)
-	//for {
-	info := shellCommand(rec.Provide, rec.Paras)
+	info := shellCommand(rec.Provide, rec.Paras, soc)
 	if strings.EqualFold(info, "") {
-		l4g.Debug("错误码：%d, 脚本：%s", share.PY_RETURN_NONE, rec.Provide)
+		soc.Send(writeTube(share.PY_RETURN_NONE, rec.Provide))
 		//return
 	}
-	//l4g.Debug("最终的数据:%s", info) //最终的数据
-	//utils.Writefile("haina.im/"+rec.Name+".txt", info)
-
-	//time.Sleep(time.Duration(t) * time.Second)
-	//}
 	r.Name = rec.Name
 	r.Data = info
 	return r
@@ -60,15 +74,14 @@ func (this *MonitorCode) startScript(rec utils.Record) ResultRec {
 *	@parameter:	appName
 *	@return:	none
 **/
-func (this *MonitorCode) startApplication(app utils.Application) ResultApp {
+func (this *MonitorCode) startApplication(app utils.Application, soc *SocketClient) ResultApp {
 	var rs []ResultRec
 	var a ResultApp
 	//l4g.Info("**************** start %s application ****************", app.Name)
 	for _, rec := range app.Record {
 		//l4g.Info("--------------- start %s of %s ---------------", rec.Provide, app.Name)
 		//执行该应用下的每个脚本
-		//this.startScript(rec)
-		resultRec := this.startScript(rec)
+		resultRec := this.startScript(rec, soc)
 		rs = append(rs, resultRec)
 	}
 	a.Name = app.Name
@@ -81,7 +94,7 @@ func (this *MonitorCode) startApplication(app utils.Application) ResultApp {
 *	@parameter:	None
 *	@return:	ResultSystem
 **/
-func (this *MonitorCode) startExplorer() Explorer {
+func (this *MonitorCode) startExplorer(soc *SocketClient) Explorer {
 	var exp Explorer
 	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"explorer.py")
 	if out, err := cmd.CombinedOutput(); err == nil {
@@ -103,7 +116,7 @@ func (this *MonitorCode) startExplorer() Explorer {
 			}
 		}
 	} else {
-		l4g.Debug("错误码：%d", share.START_EXP_ERROR)
+		soc.Send(writeTube(share.START_EXP_ERROR))
 	}
 	return exp
 }
@@ -113,7 +126,7 @@ func (this *MonitorCode) startExplorer() Explorer {
 *	@parameter:	None
 *	@return:	ResultSystem
 **/
-func (this *MonitorCode) startOsystem() Osystem {
+func (this *MonitorCode) startOsystem(soc *SocketClient) Osystem {
 	var sys Osystem
 	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"osystem.py")
 	if out, err := cmd.CombinedOutput(); err == nil {
@@ -138,7 +151,7 @@ func (this *MonitorCode) startOsystem() Osystem {
 			}
 		}
 	} else {
-		l4g.Debug("错误码：%d", share.START_SYS_ERROR)
+		soc.Send(writeTube(share.START_SYS_ERROR))
 	}
 	return sys
 }
@@ -148,7 +161,7 @@ func (this *MonitorCode) startOsystem() Osystem {
 *	@parameter:	解析的配置文件结构Monitornode
 *	@return :	MonitorData
 **/
-func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan MonitorData) {
+func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan MonitorData, soc *SocketClient) {
 	apps := utils.GetAppsByConfig(node)
 
 	for {
@@ -156,12 +169,12 @@ func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan MonitorData
 		var afs []ResultApp
 		for _, app := range apps.Application {
 			//开启单个应用
-			af := this.startApplication(app)
+			af := this.startApplication(app, soc)
 			afs = append(afs, af)
 		}
 		//获取系统资源
-		res.Exp = this.startExplorer()
-		res.Osys = this.startOsystem()
+		res.Exp = this.startExplorer(soc)
+		res.Osys = this.startOsystem(soc)
 		res.Apps = afs
 		res.Time = time.Now().Format("2006-01-02 15:04:05")
 		cc <- res
@@ -176,29 +189,40 @@ func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan MonitorData
 *	@return:	none
 **/
 func (this *MonitorCode) StartMonitor() {
+	soc := new(SocketClient)
+	soc.WebsocketClient() //开启websocket连接
+
 	node, err := utils.ParseXml(share.GO_CONFIG_FILE)
 	if err != nil {
 		l4g.Debug("错误码：%d", share.PY_PARSE_ERRROR)
+		soc.Send(writeTube(share.PY_PARSE_ERRROR))
 		return
 	}
 	scripts, err := utils.CheckPythonScripts(node) //apps 是可执行的脚本名或是不可执行的脚本名Provide
 	if err != nil {                                //一般函数调用错误
 		if scripts != nil { //意味着配置文件中有的本地不存在
 			l4g.Debug("错误码：%s， 其他信息： %v：%v", share.PY_NOT_EXIST, err, scripts) //把本地不存在的脚本名返回
+			soc.Send(writeTube(share.PY_NOT_EXIST, err, scripts))
 			return
 		}
 		l4g.Debug("错误码：%d", share.PY_WALKDIR_ERROR)
+		soc.Send(writeTube(share.PY_WALKDIR_ERROR))
 		return
 	}
 
 	cc := make(chan MonitorData, 1)
 
-	go this.Collection(node, cc)
+	go this.Collection(node, cc, soc)
 
-	//for {
-	//l4g.Info("********************DATA*******************%v", <-cc)
-	WebsocketClient(<-cc)
-	//time.Sleep(time.Duration(5) * time.Second)
-	//l4g.Info("----jsons:%v", jsons)
-	//}
+	for {
+		//l4g.Info("********************DATA*******************%v", <-cc)
+		context, err := json.Marshal(<-cc)
+		if err != nil {
+			l4g.Error(err)
+		}
+
+		soc.Send(context)
+		time.Sleep(time.Duration(5) * time.Second)
+		l4g.Info("recevied data is:%s", soc.Received)
+	}
 }

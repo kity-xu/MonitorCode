@@ -3,9 +3,10 @@ package protocol
 import (
 	"bytes"
 	"encoding/gob"
-	"encoding/json"
 	l4g "github.com/alecthomas/log4go"
 	"github.com/rgamba/evtwebsocket"
+	"haina.im/monitor/monitor_node/share"
+	"time"
 )
 
 type Applications struct {
@@ -74,10 +75,16 @@ func Decode(data []byte, to interface{}) error {
 	return dec.Decode(to)
 }
 
-func WebsocketClient(cc MonitorData) {
+type SocketClient struct {
+	C evtwebsocket.Conn
+
+	Received []byte
+}
+
+func (this *SocketClient) WebsocketClient() {
 	//var origin = "http://xiaodong.xiaodong.im/"
 	var url = "ws://192.168.2.79:5010/socket"
-	c := evtwebsocket.Conn{
+	this.C = evtwebsocket.Conn{
 
 		// When connection is established
 		OnConnected: func(w *evtwebsocket.Conn) {
@@ -87,6 +94,7 @@ func WebsocketClient(cc MonitorData) {
 		// When a message arrives
 		OnMessage: func(msg []byte, w *evtwebsocket.Conn) {
 			//l4g.Debug("OnMessage: %s\n", msg)
+			this.Received = msg
 		},
 
 		// When the client disconnects for any reason
@@ -110,14 +118,10 @@ func WebsocketClient(cc MonitorData) {
 	}
 
 	// Connect
-	if err := c.Dial(url, ""); err != nil {
+	if err := this.C.Dial(url, ""); err != nil {
 		l4g.Error(err)
 	}
 
-	context, err := json.Marshal(cc)
-	if err != nil {
-		l4g.Error(err)
-	}
 	// context, err := Encode(cc)
 	// if err != nil {
 	// 	l4g.Error("序列化失败:%s", err)
@@ -135,20 +139,30 @@ func WebsocketClient(cc MonitorData) {
 	// }
 	// l4g.Debug("---Result:", R)
 
+	//l4g.Debug("----c----------:%t", this.C)
+
+	//l4g.Debug("Sending message: %v\n", msg)
+
+	// Send the message to the server
+
+	// Take a break
+	//time.Sleep(time.Second * 3)
+}
+
+func (this *SocketClient) Send(ss []byte) {
+	if !this.C.IsConnected() {
+		l4g.Error("错误码：%d", share.WEBSOCKET_DISCONNECTED)
+		return
+	}
 	msg := evtwebsocket.Msg{
-		Body: context,
+		Body: ss,
 		Callback: func(resp []byte, w *evtwebsocket.Conn) {
 			l4g.Debug("Callback: %s\n", resp)
 		},
 	}
 
-	//l4g.Debug("Sending message: %v\n", msg)
-
-	// Send the message to the server
-	if err := c.Send(msg); err != nil {
+	if err := this.C.Send(msg); err != nil {
 		l4g.Debug("Unable to send: ", err.Error())
 	}
-
-	// Take a break
-	//time.Sleep(time.Second * 3)
+	time.Sleep(2000)
 }
