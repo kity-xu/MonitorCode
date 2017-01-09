@@ -12,4 +12,8 @@ const (
 
 	//websocket disconnected
 	WEBSOCKET_DISCONNECTED = 30001 // 连接断开
+
+	//explorer
+	CPU_OUTOFRANGE = 40001 //cpu使用超出设定值
+	MEM_OUTOFRANGE = 40002 //内存使用超出设定值
 )

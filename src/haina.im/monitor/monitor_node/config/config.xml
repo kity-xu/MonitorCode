@@ -32,9 +32,9 @@
 
 	<System>
 		<Node Name='bj-127.0.0.1-development' Timespan='120'>
-			<Cpu> '' </Cpu>
-			<Task> '' </Task>
-			<Mem> '' </Mem>
+			<Cpu>70</Cpu>
+			<Task></Task>
+			<Mem>80</Mem>
 		</Node>
 	</System>
 </Monitornode>

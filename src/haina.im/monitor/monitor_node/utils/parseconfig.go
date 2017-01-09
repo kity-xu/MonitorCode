@@ -25,14 +25,14 @@ type Monitornode struct {
 	System       System       `xml:"System"`
 }
 type System struct {
-	Node []Node `xml:"Node"`
+	Node Node `xml:"Node"`
 }
 type Node struct {
 	Name     string `xml:"Name,attr"`
 	Timespan string `xml:"Timespan,attr"`
-	Cpu      string `xml:"Cpu"`
+	Cpu      int    `xml:"Cpu"`
 	Task     string `xml:"Task"`
-	Mem      string `xml:"Mem"`
+	Mem      int    `xml:"Mem"`
 }
 
 type Applications struct {

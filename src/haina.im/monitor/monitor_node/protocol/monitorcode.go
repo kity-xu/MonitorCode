@@ -7,6 +7,7 @@ import (
 	"haina.im/monitor/monitor_node/share"
 	"haina.im/monitor/monitor_node/utils"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -94,7 +95,7 @@ func (this *MonitorCode) startApplication(app utils.Application, soc *SocketClie
 *	@parameter:	None
 *	@return:	ResultSystem
 **/
-func (this *MonitorCode) startExplorer(soc *SocketClient) Explorer {
+func (this *MonitorCode) startExplorer(node *utils.Monitornode, soc *SocketClient) Explorer {
 	var exp Explorer
 	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"explorer.py")
 	if out, err := cmd.CombinedOutput(); err == nil {
@@ -105,11 +106,34 @@ func (this *MonitorCode) startExplorer(soc *SocketClient) Explorer {
 			if strings.EqualFold(ss[0], "Tasks") {
 				exp.Tasks = ss[1]
 			}
+
 			if strings.EqualFold(ss[0], "Cpu") {
 				exp.Cpu = ss[1]
+				css := strings.Split(strings.TrimLeft(strings.Split(strings.Split(ss[1], ":")[0], ",")[0], " "), " ")[0] //用户使用cpu
+				cpu, _ := strconv.ParseFloat(css, 64)
+				//l4g.Debug("-------------cpu:%v-------------max cpu:%v", cpu, float64(node.System.Node.Cpu)/100)
+				if cpu/100 > float64(node.System.Node.Cpu)/100 {
+					l4g.Debug("the cpu out range..........")
+					soc.Send(writeTube(share.CPU_OUTOFRANGE))
+				}
 			}
+
 			if strings.EqualFold(ss[0], "Mem") {
 				exp.Mem = ss[1]
+
+				total := strings.Split(strings.Split(ss[1], ":")[0], ",")[0]
+				used := strings.Split(strings.Split(ss[1], ":")[0], ",")[2]
+
+				to, _ := strconv.ParseFloat(strings.Split(strings.TrimLeft(total, " "), " ")[0], 64)
+				us, _ := strconv.ParseFloat(strings.Split(strings.TrimLeft(used, " "), " ")[0], 64)
+
+				//l4g.Debug("-----------to:%v---us:%v----", to, us)
+
+				if us/to > float64(node.System.Node.Mem)/100 {
+					l4g.Debug("the mem out range..........")
+					soc.Send(writeTube(share.MEM_OUTOFRANGE))
+				}
+				//l4g.Info("---Mem:%v--%v", us/to, float64(node.System.Node.Mem)/100)
 			}
 			if strings.EqualFold(ss[0], "Swap") {
 				exp.Swap = ss[1]
@@ -173,7 +197,7 @@ func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan MonitorData
 			afs = append(afs, af)
 		}
 		//获取系统资源
-		res.Exp = this.startExplorer(soc)
+		res.Exp = this.startExplorer(node, soc)
 		res.Osys = this.startOsystem(soc)
 		res.Apps = afs
 		res.Time = time.Now().Format("2006-01-02 15:04:05")
