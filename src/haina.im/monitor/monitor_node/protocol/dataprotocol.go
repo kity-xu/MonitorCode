@@ -7,10 +7,11 @@ type ResultRec struct {
 
 type ResultApp struct {
 	Name string
+	Recl int
 	Recs []ResultRec
 }
 
-type Explorer struct {
+type SysStatus struct {
 	Tasks string
 	Cpu   string
 	Mem   string
@@ -18,16 +19,19 @@ type Explorer struct {
 }
 
 type Osystem struct {
-	Sys      string
-	User     string
-	IP       string
-	Version  string
-	Platform string
+	Sys          string
+	IP           string
+	Id           string
+	NodeDescribe string
+	//User     string
+	//Version  string
+	//Platform string
 }
 
 type MonitorData struct {
-	Apps []ResultApp
-	Exp  Explorer
-	Osys Osystem
-	Time string
+	Apps  []ResultApp
+	Appl  int
+	Statu SysStatus
+	Osys  Osystem
+	Time  string
 }

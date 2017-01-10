@@ -87,6 +87,7 @@ func (this *MonitorCode) startApplication(app utils.Application, soc *SocketClie
 	}
 	a.Name = app.Name
 	a.Recs = rs
+	a.Recl = len(rs)
 	return a
 }
 
@@ -95,20 +96,20 @@ func (this *MonitorCode) startApplication(app utils.Application, soc *SocketClie
 *	@parameter:	None
 *	@return:	ResultSystem
 **/
-func (this *MonitorCode) startExplorer(node *utils.Monitornode, soc *SocketClient) Explorer {
-	var exp Explorer
-	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"explorer.py")
+func (this *MonitorCode) startSysStatus(node *utils.Monitornode, soc *SocketClient) SysStatus {
+	var status SysStatus
+	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"status.py")
 	if out, err := cmd.CombinedOutput(); err == nil {
 		//l4g.Info("---------%s:", string(out)) //out return value of call *.py
 		for _, value := range strings.Split(string(out), "\n") {
 			//l4g.Info("---------values:%s", value)
 			ss := strings.Split(value, "::")
 			if strings.EqualFold(ss[0], "Tasks") {
-				exp.Tasks = ss[1]
+				status.Tasks = ss[1]
 			}
 
 			if strings.EqualFold(ss[0], "Cpu") {
-				exp.Cpu = ss[1]
+				status.Cpu = ss[1]
 				css := strings.Split(strings.TrimLeft(strings.Split(strings.Split(ss[1], ":")[0], ",")[0], " "), " ")[0] //用户使用cpu
 				cpu, _ := strconv.ParseFloat(css, 64)
 				//l4g.Debug("-------------cpu:%v-------------max cpu:%v", cpu, float64(node.System.Node.Cpu)/100)
@@ -119,7 +120,7 @@ func (this *MonitorCode) startExplorer(node *utils.Monitornode, soc *SocketClien
 			}
 
 			if strings.EqualFold(ss[0], "Mem") {
-				exp.Mem = ss[1]
+				status.Mem = ss[1]
 
 				total := strings.Split(strings.Split(ss[1], ":")[0], ",")[0]
 				used := strings.Split(strings.Split(ss[1], ":")[0], ",")[2]
@@ -136,13 +137,13 @@ func (this *MonitorCode) startExplorer(node *utils.Monitornode, soc *SocketClien
 				//l4g.Info("---Mem:%v--%v", us/to, float64(node.System.Node.Mem)/100)
 			}
 			if strings.EqualFold(ss[0], "Swap") {
-				exp.Swap = ss[1]
+				status.Swap = ss[1]
 			}
 		}
 	} else {
-		soc.Send(writeTube(share.START_EXP_ERROR))
+		soc.Send(writeTube(share.START_SYS_STATUS_ERROR))
 	}
-	return exp
+	return status
 }
 
 /**	@funcName：	startSystem
@@ -150,7 +151,7 @@ func (this *MonitorCode) startExplorer(node *utils.Monitornode, soc *SocketClien
 *	@parameter:	None
 *	@return:	ResultSystem
 **/
-func (this *MonitorCode) startOsystem(soc *SocketClient) Osystem {
+func (this *MonitorCode) startOsystem(node *utils.Monitornode, soc *SocketClient) Osystem {
 	var sys Osystem
 	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"osystem.py")
 	if out, err := cmd.CombinedOutput(); err == nil {
@@ -161,22 +162,15 @@ func (this *MonitorCode) startOsystem(soc *SocketClient) Osystem {
 			if strings.EqualFold(ss[0], "Osystem") {
 				sys.Sys = ss[1]
 			}
-			if strings.EqualFold(ss[0], "User") {
-				sys.User = ss[1]
-			}
 			if strings.EqualFold(ss[0], "IP") {
 				sys.IP = ss[1]
-			}
-			if strings.EqualFold(ss[0], "Version") {
-				sys.Version = ss[1]
-			}
-			if strings.EqualFold(ss[0], "Platform") {
-				sys.Platform = ss[1]
 			}
 		}
 	} else {
 		soc.Send(writeTube(share.START_SYS_ERROR))
 	}
+	sys.Id = node.System.Node.Id
+	sys.NodeDescribe = node.System.Node.Name
 	return sys
 }
 
@@ -197,9 +191,10 @@ func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan MonitorData
 			afs = append(afs, af)
 		}
 		//获取系统资源
-		res.Exp = this.startExplorer(node, soc)
-		res.Osys = this.startOsystem(soc)
+		res.Statu = this.startSysStatus(node, soc)
+		res.Osys = this.startOsystem(node, soc)
 		res.Apps = afs
+		res.Appl = len(afs)
 		res.Time = time.Now().Format("2006-01-02 15:04:05")
 		cc <- res
 

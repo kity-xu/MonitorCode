@@ -33,6 +33,7 @@ type Node struct {
 	Cpu      int    `xml:"Cpu"`
 	Task     string `xml:"Task"`
 	Mem      int    `xml:"Mem"`
+	Id       string `xml:"Id"`
 }
 
 type Applications struct {

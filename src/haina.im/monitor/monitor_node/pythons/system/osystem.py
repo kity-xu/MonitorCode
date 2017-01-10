@@ -44,4 +44,4 @@ def get_all():
 	except CalledProcessError:
 		return -1
 
-print(get_all() + get_osystem() + get_user() + get_ip() + get_version() + get_platform())
+print(get_osystem()  + get_ip())

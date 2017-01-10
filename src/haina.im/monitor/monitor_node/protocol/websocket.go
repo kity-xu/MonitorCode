@@ -32,11 +32,11 @@ func Encode(da MonitorData) ([]byte, error) {
 	enc := gob.NewEncoder(&buf) // Will write to network.
 
 	gob.Register(Applications{})
-	gob.Register(Explorer{})
+	gob.Register(SysStatus{})
 	gob.Register(Osystem{})
 
 	apps := Applications{da.Apps}
-	last := Data{apps, da.Exp, da.Osys, da.Time}
+	last := Data{apps, da.Statu, da.Osys, da.Time}
 
 	err := enc.Encode(last)
 	if err != nil {
