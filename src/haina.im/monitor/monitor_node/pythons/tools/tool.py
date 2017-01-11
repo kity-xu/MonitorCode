@@ -11,9 +11,9 @@ def getHead(cmd):
 		return "error"
 
 def getInfo(cmd):
-	try:
-		output = subprocess.check_output(cmd, shell=True).decode().split('\n')[0]
+	output = subprocess.check_output(cmd, shell=True).decode().split('\n')[0]
+	if output:
 		ss = ','.join(filter(lambda x: x, output.split(' '))).split(',')
 		return ss
-	except CalledProcessError:
-		return "error"
+	else:
+		return 'noexist'

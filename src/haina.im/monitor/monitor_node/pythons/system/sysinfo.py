@@ -5,7 +5,7 @@ import subprocess
 def get_osystem():
 	try:
 		o = subprocess.check_output('uname -o', shell=True).decode()
-		return 'Osystem::' + o
+		return 'Sys::' + o
 	except CalledProcessError:
 		return ''
 

@@ -7,6 +7,9 @@ def mysqldProcess(hcmd, cmd):
 	data = {}
 	head = tool.getHead(hcmd)
 	info = tool.getInfo(cmd)
+	#if info == 'noexist':
+	#	return 'noexist'
+	#return info
 	
 	for i in range(len(head)):
 		key = head[i]
@@ -14,9 +17,9 @@ def mysqldProcess(hcmd, cmd):
 			data[key] = info[i]
 	return (str(data))
 	
-	#return ("{0},{1}".format(str(data),id(redis)))
+	return ("{0},{1}".format(str(data),id(redis)))
 
-name = 'ps -aux | grep ' + sys.argv[1]
+name = 'ps -aux |grep -v grep| grep ' + sys.argv[1]
 print(mysqldProcess('ps -aux |head -1', name))
 #print(ss[0])
 #print(ss[1])

@@ -74,7 +74,7 @@ func ParseXml(path string) (*Monitornode, error) {
 		return result, err
 	}
 
-	l4g.Info(result)
+	//l4g.Info(result)
 	return result, nil
 }
 

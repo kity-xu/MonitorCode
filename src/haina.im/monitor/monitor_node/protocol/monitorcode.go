@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	l4g "github.com/alecthomas/log4go"
+	//l4g "github.com/cihub/seelog"
 	"haina.im/monitor/monitor_node/share"
 	"haina.im/monitor/monitor_node/utils"
 	"os/exec"
@@ -58,8 +59,8 @@ func shellCommand(name, paras string, soc *SocketClient) string {
 *	@parameter:	record appName
 *	@return:	none
 **/
-func (this *MonitorCode) startScript(rec utils.Record, soc *SocketClient) ResultRec {
-	var r ResultRec
+func (this *MonitorCode) startScript(rec utils.Record, soc *SocketClient) Record {
+	var r Record
 	info := shellCommand(rec.Provide, rec.Paras, soc)
 	if strings.EqualFold(info, "") {
 		soc.Send(writeTube(share.PY_RETURN_NONE, rec.Provide))
@@ -75,9 +76,9 @@ func (this *MonitorCode) startScript(rec utils.Record, soc *SocketClient) Result
 *	@parameter:	appName
 *	@return:	none
 **/
-func (this *MonitorCode) startApplication(app utils.Application, soc *SocketClient) ResultApp {
-	var rs []ResultRec
-	var a ResultApp
+func (this *MonitorCode) startApplication(app utils.Application, soc *SocketClient) AppStatus {
+	var rs []Record
+	var a AppStatus
 	//l4g.Info("**************** start %s application ****************", app.Name)
 	for _, rec := range app.Record {
 		//l4g.Info("--------------- start %s of %s ---------------", rec.Provide, app.Name)
@@ -86,12 +87,12 @@ func (this *MonitorCode) startApplication(app utils.Application, soc *SocketClie
 		rs = append(rs, resultRec)
 	}
 	a.Name = app.Name
-	a.Recs = rs
-	a.Recl = len(rs)
+	a.Records = rs
+	a.Num = len(rs)
 	return a
 }
 
-/**	@funcName：	startSystem
+/**	@funcName：	startSysStatus
 *	@function:	启动系统应用
 *	@parameter:	None
 *	@return:	ResultSystem
@@ -113,7 +114,7 @@ func (this *MonitorCode) startSysStatus(node *utils.Monitornode, soc *SocketClie
 				css := strings.Split(strings.TrimLeft(strings.Split(strings.Split(ss[1], ":")[0], ",")[0], " "), " ")[0] //用户使用cpu
 				cpu, _ := strconv.ParseFloat(css, 64)
 				//l4g.Debug("-------------cpu:%v-------------max cpu:%v", cpu, float64(node.System.Node.Cpu)/100)
-				if cpu/100 > float64(node.System.Node.Cpu)/100 {
+				if cpu > float64(node.System.Node.Cpu) {
 					l4g.Debug("the cpu out range..........")
 					soc.Send(writeTube(share.CPU_OUTOFRANGE))
 				}
@@ -146,22 +147,22 @@ func (this *MonitorCode) startSysStatus(node *utils.Monitornode, soc *SocketClie
 	return status
 }
 
-/**	@funcName：	startSystem
+/**	@funcName：	startSysInfo
 *	@function:	启动系统应用
 *	@parameter:	None
 *	@return:	ResultSystem
 **/
-func (this *MonitorCode) startOsystem(node *utils.Monitornode, soc *SocketClient) Osystem {
-	var sys Osystem
-	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"osystem.py")
+func (this *MonitorCode) startSysInfo(node *utils.Monitornode, soc *SocketClient) SysInfo {
+	var sys SysInfo
+	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"sysinfo.py")
 	if out, err := cmd.CombinedOutput(); err == nil {
 		//l4g.Info("---------%s:", string(out)) //out return value of call *.py
 		for _, value := range strings.Split(string(out), "\n") {
 			//l4g.Info("---------values:%s", value)
 			ss := strings.Split(value, "::")
-			if strings.EqualFold(ss[0], "Osystem") {
-				sys.Sys = ss[1]
-			}
+			// if strings.EqualFold(ss[0], "Sys") {
+			// 	sys.Sys = ss[1]
+			// }
 			if strings.EqualFold(ss[0], "IP") {
 				sys.IP = ss[1]
 			}
@@ -169,8 +170,8 @@ func (this *MonitorCode) startOsystem(node *utils.Monitornode, soc *SocketClient
 	} else {
 		soc.Send(writeTube(share.START_SYS_ERROR))
 	}
-	sys.Id = node.System.Node.Id
-	sys.NodeDescribe = node.System.Node.Name
+	sys.ID = node.System.Node.Id
+	sys.Name = node.System.Node.Name
 	return sys
 }
 
@@ -184,17 +185,17 @@ func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan MonitorData
 
 	for {
 		var res MonitorData
-		var afs []ResultApp
+		var afs []AppStatus
 		for _, app := range apps.Application {
 			//开启单个应用
 			af := this.startApplication(app, soc)
 			afs = append(afs, af)
 		}
 		//获取系统资源
-		res.Statu = this.startSysStatus(node, soc)
-		res.Osys = this.startOsystem(node, soc)
+		res.Status = this.startSysStatus(node, soc)
+		res.Info = this.startSysInfo(node, soc)
 		res.Apps = afs
-		res.Appl = len(afs)
+		res.Num = len(afs)
 		res.Time = time.Now().Format("2006-01-02 15:04:05")
 		cc <- res
 
@@ -242,6 +243,11 @@ func (this *MonitorCode) StartMonitor() {
 
 		soc.Send(context)
 		time.Sleep(time.Duration(5) * time.Second)
+
 		l4g.Info("recevied data is:%s", soc.Received)
+		if strings.EqualFold(string(soc.Received), "break") {
+			break
+		}
+
 	}
 }
