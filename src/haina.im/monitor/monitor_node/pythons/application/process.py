@@ -17,10 +17,7 @@ def mysqldProcess(hcmd, cmd):
 			data[key] = info[i]
 	return (str(data))
 	
-	return ("{0},{1}".format(str(data),id(redis)))
+	#return ("{0},{1}".format(str(data),id(data)))
 
 name = 'ps -aux |grep -v grep| grep ' + sys.argv[1]
 print(mysqldProcess('ps -aux |head -1', name))
-#print(ss[0])
-#print(ss[1])
-#print(sys.argv[2])

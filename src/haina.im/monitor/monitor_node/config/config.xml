@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<Monitornode>
+<Monitornode ConIP='localhost' ConPort='5010'>
 	<Applications Timespan='5'>
 
 		<Application Name='mysqld'>

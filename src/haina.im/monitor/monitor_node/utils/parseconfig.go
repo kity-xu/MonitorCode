@@ -21,6 +21,8 @@ import (
 **/
 
 type Monitornode struct {
+	IP           string       `xml:"ConIP,attr"`
+	Port         string       `xml:"ConPort,attr"`
 	Applications Applications `xml:"Applications"`
 	System       System       `xml:"System"`
 }

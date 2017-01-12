@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type MonitorCode struct {
+type MonitorNode struct {
 }
 
 /**	@funcName：	writeTube
@@ -59,7 +59,7 @@ func shellCommand(name, paras string, soc *SocketClient) string {
 *	@parameter:	record appName
 *	@return:	none
 **/
-func (this *MonitorCode) startScript(rec utils.Record, soc *SocketClient) Record {
+func (this *MonitorNode) startScript(rec utils.Record, soc *SocketClient) Record {
 	var r Record
 	info := shellCommand(rec.Provide, rec.Paras, soc)
 	if strings.EqualFold(info, "") {
@@ -76,7 +76,7 @@ func (this *MonitorCode) startScript(rec utils.Record, soc *SocketClient) Record
 *	@parameter:	appName
 *	@return:	none
 **/
-func (this *MonitorCode) startApplication(app utils.Application, soc *SocketClient) AppStatus {
+func (this *MonitorNode) startApplication(app utils.Application, soc *SocketClient) AppStatus {
 	var rs []Record
 	var a AppStatus
 	//l4g.Info("**************** start %s application ****************", app.Name)
@@ -97,7 +97,7 @@ func (this *MonitorCode) startApplication(app utils.Application, soc *SocketClie
 *	@parameter:	None
 *	@return:	ResultSystem
 **/
-func (this *MonitorCode) startSysStatus(node *utils.Monitornode, soc *SocketClient) SysStatus {
+func (this *MonitorNode) startSysStatus(node *utils.Monitornode, soc *SocketClient) SysStatus {
 	var status SysStatus
 	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"status.py")
 	if out, err := cmd.CombinedOutput(); err == nil {
@@ -152,7 +152,7 @@ func (this *MonitorCode) startSysStatus(node *utils.Monitornode, soc *SocketClie
 *	@parameter:	None
 *	@return:	ResultSystem
 **/
-func (this *MonitorCode) startSysInfo(node *utils.Monitornode, soc *SocketClient) SysInfo {
+func (this *MonitorNode) startSysInfo(node *utils.Monitornode, soc *SocketClient) SysInfo {
 	var sys SysInfo
 	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"sysinfo.py")
 	if out, err := cmd.CombinedOutput(); err == nil {
@@ -180,7 +180,7 @@ func (this *MonitorCode) startSysInfo(node *utils.Monitornode, soc *SocketClient
 *	@parameter:	解析的配置文件结构Monitornode
 *	@return :	MonitorData
 **/
-func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan MonitorData, soc *SocketClient) {
+func (this *MonitorNode) Collection(node *utils.Monitornode, cc chan MonitorData, soc *SocketClient) {
 	apps := utils.GetAppsByConfig(node)
 
 	for {
@@ -208,16 +208,20 @@ func (this *MonitorCode) Collection(node *utils.Monitornode, cc chan MonitorData
 *	@parameter:	none
 *	@return:	none
 **/
-func (this *MonitorCode) StartMonitor() {
-	soc := new(SocketClient)
-	soc.WebsocketClient() //开启websocket连接
-
+func (this *MonitorNode) StartMonitor() {
+	//解析xml
 	node, err := utils.ParseXml(share.GO_CONFIG_FILE)
 	if err != nil {
 		l4g.Debug("错误码：%d", share.PY_PARSE_ERRROR)
-		soc.Send(writeTube(share.PY_PARSE_ERRROR))
 		return
 	}
+
+	//建立websocket连接
+	soc := new(SocketClient)
+	fmt.Println("IP...Port:", node.IP, node.Port)
+	soc.Client(node.IP, node.Port)
+
+	//审核脚本
 	scripts, err := utils.CheckPythonScripts(node) //apps 是可执行的脚本名或是不可执行的脚本名Provide
 	if err != nil {                                //一般函数调用错误
 		if scripts != nil { //意味着配置文件中有的本地不存在
@@ -230,10 +234,11 @@ func (this *MonitorCode) StartMonitor() {
 		return
 	}
 
+	//数据采集
 	cc := make(chan MonitorData, 1)
-
 	go this.Collection(node, cc, soc)
 
+	//数据发送
 	for {
 		//l4g.Info("********************DATA*******************%v", <-cc)
 		context, err := json.Marshal(<-cc)

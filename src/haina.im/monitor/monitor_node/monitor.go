@@ -13,7 +13,7 @@ func main() {
 	// l4g.Info("in main StartPostServe end...")
 
 	l4g.Info("in main StartMonitor top...")
-	pro := new(protocol.MonitorCode)
+	pro := new(protocol.MonitorNode)
 	pro.StartMonitor()
 
 }

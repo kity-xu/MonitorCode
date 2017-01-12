@@ -13,8 +13,8 @@ type SocketClient struct {
 	Received []byte
 }
 
-func (this *SocketClient) WebsocketClient() {
-	var url = "ws://192.168.2.79:5010/socket"
+func (this *SocketClient) Client(ip, port string) {
+	url := "ws://" + ip + ":" + port + "/socket"
 	this.C = evtwebsocket.Conn{
 
 		// When connection is established
