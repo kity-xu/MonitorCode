@@ -14,6 +14,7 @@ const (
 	WEBSOCKET_DISCONNECTED = 30001 // 连接断开
 
 	//explorer
+	PROCESS_DEAD   = 40000 //进程不存在(可能僵死了、或启动了不存在的进程）
 	CPU_OUTOFRANGE = 40001 //cpu使用超出设定值
 	MEM_OUTOFRANGE = 40002 //内存使用超出设定值
 )

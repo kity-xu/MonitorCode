@@ -5,18 +5,11 @@ import (
 	"os/exec"
 )
 
-func shellCommand(paras ...string) string {
-	//n := len(paras)
-	cmd := exec.Command("python", "haina.im/monitor/monitor_node/pythons/application/mysqld.py", paras[0], paras[1])
-	if out, err := cmd.CombinedOutput(); err == nil {
-		fmt.Printf("---------%s:", string(out)) //out return value of call *.py
-		return string(out)
-	} else {
-		fmt.Println("running shellCommand error ....")
-		return ""
-	}
-}
-
 func main() {
-	shellCommand("nihao", "hello", "xulang", "123")
+	//执行【ls /】并输出返回文本
+	f, err := exec.Command("sh", "-c", "ps -aux |grep -v grep| grep mysqlds").Output()
+	if err != nil {
+		fmt.Println(string(err.Error()))
+	}
+	fmt.Println(string(f))
 }

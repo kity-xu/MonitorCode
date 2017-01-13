@@ -37,6 +37,14 @@ func writeTube(c ...interface{}) []byte {
 	return nil
 }
 
+func processIsLiving(pname string) bool {
+	_, err := exec.Command("sh", "-c", "ps -aux |grep -v grep| grep "+pname).Output()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 /**	@funcName：	shellCommand
 *	@function:	启动单个脚本
 *	@parameter:	脚本名
@@ -76,9 +84,18 @@ func (this *MonitorNode) startScript(rec utils.Record, soc *SocketClient) Record
 *	@parameter:	appName
 *	@return:	none
 **/
-func (this *MonitorNode) startApplication(app utils.Application, soc *SocketClient) AppStatus {
-	var rs []Record
+func (this *MonitorNode) startApplication(app utils.Application, soc *SocketClient) (AppStatus, Alarm) {
 	var a AppStatus
+	var arm Alarm
+	if !processIsLiving(app.Name) {
+		l4g.Error("the process %s is dead!!!", app.Name)
+		arm.IsErr = true
+		arm.Grade = 1
+		arm.Code = share.PROCESS_DEAD
+		arm.Msg = "不存在该进程：" + app.Name
+		return a, arm
+	}
+	var rs []Record
 	//l4g.Info("**************** start %s application ****************", app.Name)
 	for _, rec := range app.Record {
 		//l4g.Info("--------------- start %s of %s ---------------", rec.Provide, app.Name)
@@ -86,10 +103,12 @@ func (this *MonitorNode) startApplication(app utils.Application, soc *SocketClie
 		resultRec := this.startScript(rec, soc)
 		rs = append(rs, resultRec)
 	}
+	//todo:上面两次执行了同样的命令，后需要改进
+
 	a.Name = app.Name
 	a.Records = rs
 	a.Num = len(rs)
-	return a
+	return a, arm
 }
 
 /**	@funcName：	startSysStatus
@@ -97,8 +116,9 @@ func (this *MonitorNode) startApplication(app utils.Application, soc *SocketClie
 *	@parameter:	None
 *	@return:	ResultSystem
 **/
-func (this *MonitorNode) startSysStatus(node *utils.Monitornode, soc *SocketClient) SysStatus {
+func (this *MonitorNode) startSysStatus(node *utils.Monitornode, soc *SocketClient) (SysStatus, Alarm, Alarm) {
 	var status SysStatus
+	var arm1, arm2 Alarm
 	cmd := exec.Command("python", share.PY_DIRPATH_SYS+"status.py")
 	if out, err := cmd.CombinedOutput(); err == nil {
 		//l4g.Info("---------%s:", string(out)) //out return value of call *.py
@@ -116,7 +136,11 @@ func (this *MonitorNode) startSysStatus(node *utils.Monitornode, soc *SocketClie
 				//l4g.Debug("-------------cpu:%v-------------max cpu:%v", cpu, float64(node.System.Node.Cpu)/100)
 				if cpu > float64(node.System.Node.Cpu) {
 					l4g.Debug("the cpu out range..........")
-					soc.Send(writeTube(share.CPU_OUTOFRANGE))
+					arm1.IsErr = true
+					arm1.Grade = 3
+					arm1.Code = share.CPU_OUTOFRANGE
+					arm1.Msg = "CPU使用率超出预设范围"
+					//soc.Send(writeTube(share.CPU_OUTOFRANGE))
 				}
 			}
 
@@ -133,7 +157,11 @@ func (this *MonitorNode) startSysStatus(node *utils.Monitornode, soc *SocketClie
 
 				if us/to > float64(node.System.Node.Mem)/100 {
 					l4g.Debug("the mem out range..........")
-					soc.Send(writeTube(share.MEM_OUTOFRANGE))
+					arm2.IsErr = true
+					arm2.Grade = 3
+					arm2.Code = share.MEM_OUTOFRANGE
+					arm2.Msg = "内存使用率超出预设范围"
+					//soc.Send(writeTube(share.MEM_OUTOFRANGE))
 				}
 				//l4g.Info("---Mem:%v--%v", us/to, float64(node.System.Node.Mem)/100)
 			}
@@ -144,7 +172,7 @@ func (this *MonitorNode) startSysStatus(node *utils.Monitornode, soc *SocketClie
 	} else {
 		soc.Send(writeTube(share.START_SYS_STATUS_ERROR))
 	}
-	return status
+	return status, arm1, arm2
 }
 
 /**	@funcName：	startSysInfo
@@ -186,17 +214,30 @@ func (this *MonitorNode) Collection(node *utils.Monitornode, cc chan MonitorData
 	for {
 		var res MonitorData
 		var afs []AppStatus
+		var arms []Alarm
 		for _, app := range apps.Application {
 			//开启单个应用
-			af := this.startApplication(app, soc)
+			af, arm := this.startApplication(app, soc)
+			if arm.IsErr {
+				arms = append(arms, arm)
+			}
 			afs = append(afs, af)
 		}
 		//获取系统资源
-		res.Status = this.startSysStatus(node, soc)
+		var arm1, arm2 Alarm
+		status, arm1, arm2 := this.startSysStatus(node, soc)
+		if arm1.IsErr {
+			arms = append(arms, arm1)
+		}
+		if arm2.IsErr {
+			arms = append(arms, arm2)
+		}
+		res.Status = status
 		res.Info = this.startSysInfo(node, soc)
 		res.Apps = afs
 		res.Num = len(afs)
 		res.Time = time.Now().Format("2006-01-02 15:04:05")
+		res.Arms = arms
 		cc <- res
 
 		time.Sleep(time.Duration(apps.Timespan) * time.Second)
@@ -218,7 +259,6 @@ func (this *MonitorNode) StartMonitor() {
 
 	//建立websocket连接
 	soc := new(SocketClient)
-	fmt.Println("IP...Port:", node.IP, node.Port)
 	soc.Client(node.IP, node.Port)
 
 	//审核脚本

@@ -24,10 +24,19 @@ type SysInfo struct {
 	Name string
 }
 
+// Code 错误码； Msg 错误信息； Grade 错误级别
+type Alarm struct {
+	IsErr bool
+	Code  int
+	Msg   string
+	Grade int
+}
+
 type MonitorData struct {
-	Apps   []AppStatus
-	Num    int
-	Status SysStatus
 	Info   SysInfo
+	Status SysStatus
+	Num    int
+	Apps   []AppStatus
+	Arms   []Alarm
 	Time   string
 }

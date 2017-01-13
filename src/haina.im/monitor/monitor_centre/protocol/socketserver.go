@@ -33,16 +33,25 @@ type SysInfo struct {
 	Name string
 }
 
+type Alarm struct {
+	IsErr bool
+	Code  int
+	Msg   string
+	Grade int
+}
+
 type MonitorData struct {
-	Apps   []AppStatus
-	Num    int
-	Status SysStatus
 	Info   SysInfo
+	Status SysStatus
+	Num    int
+	Apps   []AppStatus
+	Arms   []Alarm
 	Time   string
 }
 
 type SocketServer struct {
-	Buffer MonitorData
+	Buffer    MonitorData
+	IsDisConn bool
 }
 
 func (this *SocketServer) Echo(ws *websocket.Conn) {
@@ -53,16 +62,12 @@ func (this *SocketServer) Echo(ws *websocket.Conn) {
 		var reply string
 
 		if err = websocket.Message.Receive(ws, &reply); err != nil {
+			this.IsDisConn = true
 			fmt.Println("Can't receive")
 			break
 		}
 
-		//fmt.Println("----------bytes------------:\n", reply)
-
 		err := json.Unmarshal([]byte(reply), &this.Buffer)
-
-		//fmt.Println("----------bengin------------:\n", this.Buffer)
-
 		msg := "googd luck xulang"
 		if err = websocket.Message.Send(ws, msg); err != nil {
 			break
