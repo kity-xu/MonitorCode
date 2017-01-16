@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"fmt"
+	"github.com/cihub/seelog"
 	"net/smtp"
 	"strings"
 )
@@ -15,6 +15,9 @@ import (
  *  body: The content of mail
  *  mailtyoe: mail type html or text
  */
+
+type Notification struct {
+}
 
 func configEmail(user, password, host, to, subject, body, mailtype string) error {
 	hp := strings.Split(host, ":")
@@ -30,7 +33,9 @@ func configEmail(user, password, host, to, subject, body, mailtype string) error
 	err := smtp.SendMail(host, auth, user, send_to, msg)
 	return err
 }
-func SendMail(message string) {
+func (this *Notification) SendMail(message string) {
+	log, _ := seelog.LoggerFromConfigAsFile("haina.im/monitor/monitor_centre/config/logconfig.xml")
+	defer log.Flush()
 	user := "cherish_xulang@163.com"
 	password := "xxdlyn1025"
 	host := "smtp.163.com:25"
@@ -44,12 +49,16 @@ func SendMail(message string) {
  	</body>
  	</html>
  	`
-	fmt.Println("send email")
+	log.Debug("send email")
 	err := configEmail(user, password, host, to, subject, body, "html")
 	if err != nil {
-		fmt.Println("send mail error!")
-		fmt.Println(err)
+		log.Debug("send mail error!")
+		log.Debug(err)
 	} else {
-		fmt.Println("send mail success!")
+		log.Debug("send mail success!")
 	}
+}
+
+func (this *Notification) SendSms(message string) {
+
 }

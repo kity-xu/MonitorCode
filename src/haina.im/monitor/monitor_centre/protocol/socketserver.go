@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cihub/seelog"
 	"log"
 	"net/http"
 
@@ -55,6 +56,9 @@ type SocketServer struct {
 }
 
 func (this *SocketServer) Echo(ws *websocket.Conn) {
+	log, _ := seelog.LoggerFromConfigAsFile("haina.im/monitor/monitor_centre/config/logconfig.xml")
+	defer log.Flush()
+
 	var err error
 	this.Buffer = MonitorData{}
 	for {
@@ -63,7 +67,7 @@ func (this *SocketServer) Echo(ws *websocket.Conn) {
 
 		if err = websocket.Message.Receive(ws, &reply); err != nil {
 			this.IsDisConn = true
-			fmt.Println("Can't receive")
+			log.Debug("Can't receive")
 			break
 		}
 

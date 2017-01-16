@@ -34,7 +34,7 @@
 		<Node Name='bj-127.0.0.1-development' Timespan='120'>
 			<Cpu>70</Cpu>
 			<Task></Task>
-			<Mem>40</Mem>
+			<Mem>90</Mem>
 			<Id>2017.1.10-132</Id>
 		</Node>
 	</System>
