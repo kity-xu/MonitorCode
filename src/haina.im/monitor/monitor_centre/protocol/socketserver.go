@@ -53,8 +53,7 @@ type MonitorData struct {
 }
 
 type SocketServer struct {
-	Buffer MonitorData
-	IsConn bool
+	Conn map[string]Client
 }
 
 type Client struct {
@@ -66,7 +65,7 @@ type Client struct {
 
 var logf seelog.LoggerInterface
 
-var clients map[string]Client
+//var clients map[string]Client
 
 func (this *SocketServer) websocketServer(ws *websocket.Conn) {
 	var (
@@ -84,14 +83,12 @@ func (this *SocketServer) websocketServer(ws *websocket.Conn) {
 		if err = ws.Close(); err != nil {
 			logf.Error("Websocket could not be closed", err.Error())
 		}
-
-		logf.Flush()
-		logf.Close()
 	}()
 
 	for {
 		if err = websocket.Message.Receive(ws, &clientMsg); err != nil {
 			logf.Debug(id, "receive disconnected...")
+			delete(this.Conn, ip)
 			return
 		}
 
@@ -104,21 +101,24 @@ func (this *SocketServer) websocketServer(ws *websocket.Conn) {
 
 		fmt.Println("=----------addrIP:", id)
 		fmt.Println("=----------addrIP:", ip)
+		fmt.Println("-----------remoteIP:", node.Data.Info.IP)
 
-		clients[ip] = node
+		this.Conn[ip] = node
 
 		msg := "good luck xulang"
 		if err = websocket.Message.Send(ws, msg); err != nil {
 			logf.Debug(id, "send disconnected...")
 		}
-		logf.Debug(clients)
-		fmt.Println(len(clients))
+		logf.Debug(this.Conn)
+		fmt.Println(len(this.Conn))
 	}
 }
 
 func (this *SocketServer) StartSocketserver() {
-	clients = make(map[string]Client)
-	logf, _ = seelog.LoggerFromConfigAsFile("haina.im/monitor/monitor_centre/config/logconfig.xml")
+	this.Conn = make(map[string]Client)
+	logf, _ = seelog.LoggerFromConfigAsFile("haina.im/monitor/monitor_centre/config/log.xml")
+	defer logf.Flush()
+	defer logf.Close()
 
 	fmt.Println("begin")
 	http.Handle("/", http.FileServer(http.Dir("."))) // <-- note this line

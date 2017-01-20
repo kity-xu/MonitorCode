@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<Listener Name='xuxiaodong'>
+	<Phone>18795394072</Phone>
+	<Email>cherish_xulang@163.com</Email>
+</Listener>
+
+<Listener Name='xulang'>
+	<Phone>18795394072</Phone>
+	<Email>474493616@qq.com</Email>
+</Listener>
+
+
+<Alarm>
+	<Tube Name='bj125d'>
+		<Node ID='192.168.3.248'>
+			<Record DataType='SysStatus' Listener='xuxiaodong'/>
+			<Record DataType='Application' Listener='xuxiaodong'/>
+		</Node>
+
+		<Node ID='127.0.0.1'>
+			<Record> </Record>
+		</Node>
+	</Tube>
+</Alarm>
