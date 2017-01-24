@@ -3,6 +3,8 @@ import sys
 sys.path.append(r'haina.im/monitor/monitor_node/pythons/tools')
 import tool
 
+#f, err := exec.Command("sh", "-c", "ps -aux |grep -v grep| grep mysqlds").Output()
+
 def mysqldProcess(hcmd, cmd):
 	data = {}
 	head = tool.getHead(hcmd)
