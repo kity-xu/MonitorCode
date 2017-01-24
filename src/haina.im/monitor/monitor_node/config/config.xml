@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<Monitornode ConIP='localhost' ConPort='5010'>
+<Monitornode ConIP='192.168.9.222' ConPort='5010'>
 	<Applications Timespan='5'>
 
-		<Application Name='mysqld'>
+		<Application Name='fcitx-qimpanel'>
 				<Record Name='process' Provide='process.py' Timespan='3'>
-					<Paras>mysqld</Paras>
+					<Paras>fcitx-qimpanel</Paras>
 				</Record>
 
 				<!-- <Record Name='configFile' Provide='config.py' Timespan='120'>
@@ -12,9 +12,9 @@
 				</Record> -->
 		</Application>
 
-		<Application Name='redis-server'>
+		<Application Name='snapd'>
 				<Record Name='process1' Provide='process.py' Timespan='3'>
-					<Paras>redis-server</Paras>
+					<Paras>snapd</Paras>
 				</Record>
 
 				<!-- <Record Name='configFile' Provide='xulang.py' Timespan='120'>
@@ -31,7 +31,7 @@
 	</Applications>
 
 	<System>
-		<Node Name='bj-127.0.0.1-development' Timespan='120'>
+		<Node Name='bj-home X1 Carbon-development' Timespan='120'>
 			<Cpu>70</Cpu>
 			<Task></Task>
 			<Mem>90</Mem>

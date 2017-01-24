@@ -15,5 +15,4 @@ func main() {
 	l4g.Info("in main StartMonitor top...")
 	pro := new(protocol.MonitorNode)
 	pro.StartMonitor()
-
 }
